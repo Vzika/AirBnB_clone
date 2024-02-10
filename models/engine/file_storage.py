@@ -4,6 +4,12 @@ This is a file storage class
 """
 from models.base_model import BaseModel
 import json
+from models.user import User
+from models.state import State
+from models.city import City
+from models.amenity import Amenity
+from models.place import Place
+from models.review import Review
 
 class FileStorage():
 	__file_path = 'file.json'
@@ -24,14 +30,21 @@ class FileStorage():
 			json.dump(serialized_objects, file)
 	def reload(self):
 		"""Deserializes the json files back to python __objects"""
+		current_classes = {'BaseModel': BaseModel, 'User': User,
+				   'Place' : Place, 'State' : State,
+				   'City' : City, 'Amenity' : Amenity, 'Review' : Review
+				  }
 		try:
 			with open(self.__file_path, "r") as file:
 				loaded_object = json.load(file)
 				for key, value in loaded_object.items():
-					self.__objects[key] = BaseModel(**value)
+					class_name, obj_id = key.split('.')
+					if class_name in current_classes:
+						class_obj_name = current_classes[class_name]
+						instance = class_obj_name(**value)
+						self.__objects[key] =  instance
 		except FileNotFoundError:
         		pass
-			
 
 		
 	

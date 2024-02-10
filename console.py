@@ -7,9 +7,19 @@ import uuid
 from models.base_model import BaseModel
 from models import storage
 import models
+from models.user import User
+from models.state import State
+from models.city import City
+from models.amenity import Amenity
+from models.place import Place
+from models.review import Review
+import re
+
 class HBNBCommand(cmd.Cmd):
-	objects = {'BaseModel': BaseModel
-               }
+	objects = {'BaseModel': BaseModel, 'User': User,
+		   'Place' : Place, 'State' : State,
+		   'City' : City, 'Amenity' : Amenity, 'Review' :Review
+		  }
 
 	prompt = "(hbnb) "
 
@@ -30,7 +40,7 @@ class HBNBCommand(cmd.Cmd):
 		pass
 	def do_create(self,class_name):
 		"""Creates a new instance of BaseModel, saves it (to the JSON file) and prints the id.
-		 Ex: $ create BaseModel
+		Ex: $ create BaseModel
 		"""
 		if class_name == "":
 			print("** class name missing **")
@@ -57,14 +67,8 @@ class HBNBCommand(cmd.Cmd):
 				print("** instance id missing **")
 				return
 			all_objs = storage.all()
-			#print(all_objs.keys())
 			key1 = f"{class_name_id[0]}.{class_name_id[1]}"
 			obj_keys = list(all_objs.keys())
-			#print("HELLOOOOOOOOOOOO")
-			#print(obj_keys)
-			#for key in obj_keys:
-    				#class_name, instance_id = key.split('.')
-			#print(class_name)
 			if key1 not in obj_keys:
 				print("** no instance found **")
 				return
@@ -83,7 +87,7 @@ class HBNBCommand(cmd.Cmd):
 			print("** class name missing **")
 			return
 		elif class_name_id[0] in HBNBCommand.objects.keys():
-			if class_name_id[1] =="":
+			if len(class_name_id) < 2:
 				print("** instance id missing **")
 				return
 			all_objs = storage.all()
@@ -150,9 +154,65 @@ class HBNBCommand(cmd.Cmd):
 		else:
 			print("** class doesn't exist **")
 			return
+	
+	def default(self, line):
+		"""
+		default is called when unknown command is passed
+		"""
+		unknown_command = line.split(".")
+		if unknown_command[0] in HBNBCommand.objects.keys():
+			if len(unknown_command) != 2:
+				return
+			splited_command  = unknown_command[1].strip(')').split('(')
+			cmd_command = splited_command[0]
+			if unknown_command[1] == "all()":
+				str_rep = []
+				obj_dict = storage.all()
+				for class_name_id in obj_dict.keys():
+					class_name = class_name_id.split('.')[0]
+					if class_name == unknown_command[0]:
+						str_rep.append(str(obj_dict[class_name_id]))
+				print(str_rep)
+			
+			elif unknown_command[1] == "count()":
+				num_instance = 0
+				obj_dict = storage.all()
+				for class_name_id in obj_dict.keys():
+					class_name = class_name_id.split('.')[0]
+					if class_name == unknown_command[0]:
+						num_instance = num_instance + 1
+				print(num_instance)
 
+			elif cmd_command == "show":
+				if len(splited_command) < 2:
+					print("** instance id missing **")
+				else:
+					id = splited_command[1][1:-1]
+				obj_id = '{} {}'.format(unknown_command[0], id)
+				self.do_show(obj_id)
+			elif cmd_command == "destroy":
+				if len(splited_command) < 2:
+					print("** instance id missing **")
+				else:
+					id = splited_command[1][1:-1]
+					obj_id = '{} {}'.format(unknown_command[0], id)
+					self.do_destroy(obj_id)
 
+			elif cmd_command == "update":
+				if len(splited_command) < 4:
+					print("** attributes missing **")
+				else:
+					id = splited_command[1][1:-1]
+					attribute_name = splited_command[2][1:-1]
+					attribute_value = splited_command[3][1:-1]
+					all_objs = storage.all()
+					obj_id = '{} {}'.format(unknown_command[0], id)
+					obj_keys = list(all_objs.keys())
+					if obj_id in obj_keys:
+						self.do_update('{} {} "{}" "{}"'.format(obj_id, attribute_name, attribute_value))
 
+			else:
+				print("** class doesn't exist **")
 
 if __name__ == '__main__':
     HBNBCommand().cmdloop()
