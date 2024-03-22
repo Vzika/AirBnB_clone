@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-The root class:class BaseModel
+	The root class:class BaseModel
 """
 import uuid
 from datetime import datetime
